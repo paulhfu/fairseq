@@ -108,7 +108,7 @@ def load_indexed_dataset(
             path_k,
             impl=dataset_impl_k or default,
             fix_lua_indexing=True,
-            dictionary=dictionary,
+            dictionary=dictionary
         )
         if dataset is None:
             break

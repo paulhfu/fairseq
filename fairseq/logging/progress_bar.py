@@ -18,7 +18,7 @@ from numbers import Number
 from typing import Optional
 
 import torch
-
+import matplotlib.pyplot as plt
 from .meters import AverageMeter, StopwatchMeter, TimeMeter
 
 logger = logging.getLogger(__name__)
@@ -486,6 +486,7 @@ class WandBProgressBarWrapper(BaseProgressBar):
 
     def __init__(self, wrapped_bar, wandb_project, run_name=None):
         self.wrapped_bar = wrapped_bar
+        self.incrStepCnt = 0
         if wandb is None:
             logger.warning("wandb not found, pip install wandb")
             return
@@ -522,10 +523,41 @@ class WandBProgressBarWrapper(BaseProgressBar):
         prefix = "" if tag is None else tag + "/"
 
         for key in stats.keys() - {"num_updates"}:
-            if isinstance(stats[key], AverageMeter):
-                wandb.log({prefix + key: stats[key].val}, step=step)
-            elif isinstance(stats[key], Number):
-                wandb.log({prefix + key: stats[key]}, step=step)
+            if key[0] != "_":
+                if isinstance(stats[key], AverageMeter):
+                    wandb.log({prefix + key: stats[key].val}, step=step)
+                elif isinstance(stats[key], Number):
+                    wandb.log({prefix + key: stats[key]}, step=step)
+
+        if self.incrStepCnt % 16 == 0:
+            if "_input0" in stats.keys() and "_future0" in stats.keys():
+                if not (stats["_input0"] == -1).all():
+                    pastLen = stats["_input0"].shape[0]
+                    xP = list(range(pastLen))
+                    xF = [pastLen + i for i in range(stats["_future0"].shape[0])]
+                    fig = plt.figure()
+                    plt.plot(xP, stats["_input0"].tolist(), label="past")
+                    plt.plot(xF, stats["_future0"].tolist(), label="future")
+                    plt.legend()
+                    plt.tight_layout()
+                    wandb.log({"candles": fig})
+            if "_preds" in stats.keys() and "_tgts" in stats.keys():
+                for ind in range(stats["_preds"].shape[1]):
+                    preds = stats["_preds"][:, ind].flatten().tolist()
+                    tgts = stats["_tgts"][:, ind]
+                    if not (tgts == 2).all():
+                        tgts = tgts.flatten().tolist()
+                        fig = plt.figure()
+                        ax = fig.add_subplot(111)
+                        ind = list(range(len(preds)))
+                        ax.bar(x=ind, height=preds, width=0.35, align='center', label="predictions")
+                        ax.bar(x=ind, height=tgts, width=0.35/3,  align='center', label="targets")
+                        plt.xticks(ind, preds)
+                        plt.legend()
+                        plt.tight_layout()
+                        wandb.log({f"{ind} predictions vs tgts": fig})
+
+        self.incrStepCnt += 1
 
 
 try:

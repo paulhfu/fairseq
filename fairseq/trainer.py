@@ -1098,7 +1098,13 @@ class Trainer(object):
                 logging_output = self._reduce_and_log_stats(
                     logging_outputs, sample_size, grad_norm
                 )
-
+                tgts = torch.cat([no["_tgts"] for no in logging_outputs], dim=0)
+                preds = torch.cat([no["_preds"] for no in logging_outputs], dim=0)
+                rndInd = torch.randint(0, preds.shape[0], (64,))
+                logging_output["_input0"] = logging_outputs[-1]["_input0"]
+                logging_output["_future0"] = logging_outputs[-1]["_future0"]
+                logging_output["_tgts"] = tgts[rndInd]
+                logging_output["_preds"] = preds[rndInd]
                 # clear CUDA cache to reduce memory fragmentation
                 if (
                     self.cuda

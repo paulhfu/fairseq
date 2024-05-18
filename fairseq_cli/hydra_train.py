@@ -18,6 +18,9 @@ from fairseq.dataclass.initialize import add_defaults, hydra_init
 from fairseq.dataclass.utils import omegaconf_no_object_check
 from fairseq.utils import reset_logging
 from fairseq_cli.train import main as pre_main
+from examples.alpaca.models.alpaca_model import AlpacaModel
+from examples.alpaca.criterions.alpaca_criterion import AlpacaCriterion
+from examples.alpaca.tasks.alpaca import AlpacaTask
 
 logger = logging.getLogger("fairseq_cli.hydra_train")
 

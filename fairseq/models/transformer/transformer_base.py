@@ -12,12 +12,8 @@ from torch import Tensor
 import logging
 
 from fairseq import utils
-from fairseq.dataclass.utils import gen_parser_from_dataclass
-from fairseq.distributed import fsdp_wrap
 from fairseq.models import FairseqEncoderDecoderModel
 from fairseq.models.transformer import (
-    TransformerConfig,
-    TransformerDecoderBase,
     TransformerEncoderBase,
 )
 
@@ -51,9 +47,7 @@ class TransformerModelBase(FairseqEncoderDecoderModel):
     def add_args(cls, parser):
         """Add model-specific arguments to the parser."""
         # we want to build the args recursively in this case.
-        gen_parser_from_dataclass(
-            parser, TransformerConfig(), delete_default=False, with_prefix=""
-        )
+        pass
 
     @classmethod
     def build_model(cls, cfg, task):
@@ -130,15 +124,6 @@ class TransformerModelBase(FairseqEncoderDecoderModel):
     @classmethod
     def build_encoder(cls, cfg, src_dict, embed_tokens):
         return TransformerEncoderBase(cfg, src_dict, embed_tokens)
-
-    @classmethod
-    def build_decoder(cls, cfg, tgt_dict, embed_tokens):
-        return TransformerDecoderBase(
-            cfg,
-            tgt_dict,
-            embed_tokens,
-            no_encoder_attn=cfg.no_cross_attention,
-        )
 
     # TorchScript doesn't support optional arguments with variable length (**kwargs).
     # Current workaround is to add union of all arguments in child classes.
